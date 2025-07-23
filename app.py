@@ -4,6 +4,46 @@ import json
 import os
 import datetime
 
+# Inject SaaS-style Custom CSS
+st.markdown("""
+    <style>
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background-color: #f7f9fb;
+    }
+    .stApp {
+        max-width: 900px;
+        margin: auto;
+        padding: 2rem;
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    }
+    .stTextInput, .stTextArea, .stSelectbox {
+        border-radius: 10px !important;
+        background-color: #fff !important;
+    }
+    .stButton > button {
+        background-color: #4CAF50;
+        color: white;
+        border-radius: 8px;
+        padding: 8px 16px;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+    .stButton > button:hover {
+        background-color: #45a049;
+    }
+    .stExpander {
+        border-radius: 12px !important;
+        border: 1px solid #e0e0e0 !important;
+    }
+    h1, h2, h3 {
+        color: #2b2d42;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Configure Gemini API Key
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 model = genai.GenerativeModel("gemini-2.0-flash")
