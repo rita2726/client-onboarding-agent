@@ -2,7 +2,7 @@ import streamlit as st
 import openai
 
 # Set your OpenAI key if running locally (optional)
-# openai.api_key = st.secrets["OPENAI_API_KEY"]
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 st.set_page_config(page_title="AI Client Onboarding Agent", page_icon="🤖")
 st.title("🤖 AI Client Onboarding Agent")
