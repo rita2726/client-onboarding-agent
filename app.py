@@ -1,11 +1,11 @@
 import streamlit as st
 import google.generativeai as genai
 
-# Configure Gemini API Key (from Streamlit secrets)
+# Configure Gemini API Key
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
 # Load the Gemini model
-model = genai.GenerativeModel("gemini-2.0-flash") 
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 # Title
 st.title("📝 AI Project Intake Summary")
@@ -29,7 +29,6 @@ with tab1:
     if submitted:
         with st.spinner("Generating summary using Gemini..."):
 
-            # Prompt Template
             prompt = f"""
 You are a project manager at a top consulting firm. A new client has submitted a project intake form.
 
@@ -50,6 +49,7 @@ Make the summary sound human, structured, and useful for onboarding.
                 response = model.generate_content(prompt)
                 summary = response.text
                 st.session_state.generated_summary = summary
+                st.session_state.risks = risks
                 st.success("✅ Summary generated. Check the next tab!")
             except Exception as e:
                 st.error(f"Failed to generate summary: {e}")
@@ -57,7 +57,31 @@ Make the summary sound human, structured, and useful for onboarding.
 # Summary tab
 with tab2:
     st.subheader("📄 Onboarding Summary")
+
     if "generated_summary" in st.session_state:
         st.markdown(st.session_state.generated_summary)
+
+        # 📌 Auto-Next Steps Generator
+        st.divider()
+        st.subheader("📌 Suggested Next Steps")
+        if st.button("Generate Next Steps"):
+            with st.spinner("Thinking..."):
+                try:
+                    combined_prompt = f"""
+You are a senior project manager. Based on the following project summary and risks, generate 3 clear, practical next steps a PM should take.
+
+SUMMARY:
+{st.session_state.generated_summary}
+
+RISKS:
+{st.session_state.risks}
+"""
+
+                    response = model.generate_content(combined_prompt)
+                    next_steps = response.text.strip()
+                    st.success("Here are your suggested next steps:")
+                    st.markdown(next_steps)
+                except Exception as e:
+                    st.error(f"Could not generate next steps: {e}")
     else:
         st.info("Fill the form and click Generate Summary to see the output here.")
