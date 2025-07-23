@@ -1,38 +1,85 @@
 import streamlit as st
 import openai
-from openai import OpenAI
+import os
 
-st.title("🤖 Client Onboarding Agent (Demo)")
+# Set up OpenAI API Key from Streamlit secrets
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# Load API key securely from Streamlit secrets
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+st.set_page_config(page_title="Client Onboarding Agent", page_icon="🤖")
+st.title("🤖 AI-Powered Client Onboarding Agent")
+
+st.markdown("Please fill in the client details below:")
 
 # Input fields
-company_name = st.text_input("Company Name")
-project_scope = st.text_area("Project Scope")
-budget = st.selectbox("Estimated Budget", ["< $5,000", "$5,000 - $10,000", "> $10,000"])
-timeline = st.text_input("Preferred Timeline")
+company_name = st.text_input("🧾 Company Name")
+project_scope = st.text_area("📋 Project Scope")
+budget = st.selectbox("💰 Estimated Budget", ["< $5,000", "$5,000–$10,000", "$10,000+", "Not specified"])
+timeline = st.text_input("⏱️ Preferred Timeline (e.g., 2 months, ASAP, etc.)")
 
-if st.button("Generate Onboarding Summary"):
-    with st.spinner("Creating onboarding plan..."):
-        prompt = (
-            f"You are a helpful AI onboarding agent. A new client from a company named '{company_name}' "
-            f"has shared their project scope as: '{project_scope}'. Their estimated budget is '{budget}', "
-            f"and their preferred timeline is '{timeline}'.\n\n"
-            f"Generate a friendly, professional onboarding summary for the internal team."
-        )
+# Tabs for output
+tab1, tab2 = st.tabs(["📨 Onboarding Summary", "⚠️ Risk Flags / Client Questions"])
 
-        try:
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+# Tab 1: Onboarding Summary
+with tab1:
+    if st.button("📝 Generate Summary"):
+        with st.spinner("Crafting onboarding email..."):
+            prompt = f"""
+            You are an AI client onboarding assistant. Create a professional, friendly onboarding email for a new client.
+
+            Company: {company_name}
+            Project Scope: {project_scope}
+            Budget: {budget}
+            Timeline: {timeline}
+
+            Write it in a warm but confident tone. Use emojis for modern formatting. Add a 3-point next steps list to suggest how the internal team should proceed.
+            """
+
+            response = openai.chat.completions.create(
+                model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "You are an expert AI onboarding assistant."},
-                    {"role": "user", "content": prompt},
-                ]
+                    {"role": "system", "content": "You are an expert client onboarding agent who writes professional onboarding summaries for internal teams."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7
             )
-            st.success("Onboarding summary generated!")
-            st.markdown("### 📝 Summary")
-            st.markdown(response.choices[0].message.content)
 
-        except Exception as e:
-            st.error(f"Error: {e}")
+            onboarding_summary = response.choices[0].message.content
+            st.subheader("📨 Generated Summary")
+            st.markdown(onboarding_summary)
+
+            st.download_button("📥 Download Summary", onboarding_summary, file_name="onboarding_summary.txt")
+
+# Tab 2: Risk Flags / Questions
+with tab2:
+    if st.button("🔍 Analyze Risks & Questions"):
+        with st.spinner("Analyzing potential red flags and questions..."):
+            risk_prompt = f"""
+            You are an AI onboarding risk analyzer.
+
+            Based on the following details, identify:
+            1. Potential project red flags or risks (e.g., unclear scope, tight budget, missing timeline).
+            2. Smart clarifying questions the team should ask the client.
+
+            Company: {company_name}
+            Project Scope: {project_scope}
+            Budget: {budget}
+            Timeline: {timeline}
+
+            Format the response into two bullet sections.
+            """
+
+            risk_response = openai.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a senior project risk analyst."},
+                    {"role": "user", "content": risk_prompt}
+                ],
+                temperature=0.6
+            )
+
+            risk_output = risk_response.choices[0].message.content
+            st.subheader("⚠️ Risk Flags & Client Questions")
+            st.markdown(risk_output)
+
+            st.download_button("📥 Download Risk Summary", risk_output, file_name="risk_flags_and_questions.txt")
+
