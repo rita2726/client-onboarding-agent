@@ -1,25 +1,27 @@
 import streamlit as st
 import google.generativeai as genai
+import json
+import uuid
 
 # Configure Gemini API Key
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+model = genai.GenerativeModel("gemini-2.0-pro")
 
-# Load the Gemini model
-model = genai.GenerativeModel("gemini-2.0-flash")
+# Project storage in session
+if "project_data" not in st.session_state:
+    st.session_state.project_data = {}
 
-# Title
-st.title("📝 AI Project Intake Summary")
-
-# Initialize memory for all project submissions
-if "projects" not in st.session_state:
-    st.session_state.projects = []
+# App title
+st.title("🤖 AI Client Project Onboarding Assistant")
 
 # Tabs
-tab1, tab2 = st.tabs(["Project Form", "Generated Summary"])
+tab1, tab2 = st.tabs(["📝 Intake Form", "📄 Generated Summary"])
 
-# ------------ TAB 1: FORM ------------
+# -------------------------
+# 🧾 TAB 1: Intake Form
+# -------------------------
 with tab1:
-    st.subheader("🧾 New Client Project Intake Form")
+    st.subheader("New Client Project Form")
 
     client_name = st.text_input("Client Name")
     project_title = st.text_input("Project Title")
@@ -29,15 +31,25 @@ with tab1:
     risks = st.text_area("Known Risks / Concerns")
     questions = st.text_area("Client Questions or Flags")
 
-    submitted = st.button("Generate Summary")
+    submitted = st.button("✨ Generate Summary + Next Steps")
 
     if submitted:
         with st.spinner("Generating summary using Gemini..."):
 
+            # Prompt for summary + next steps
             prompt = f"""
-You are a project manager at a top consulting firm. A new client has submitted a project intake form.
+You are an experienced Project Manager. Based on the client's inputs below, generate:
 
-Generate a warm, confident internal summary for the team using the following details:
+1. A warm, confident internal onboarding summary.
+2. 3–5 next steps for the delivery team.
+
+Format:
+### Summary
+...
+
+### Next Steps
+- ...
+- ...
 
 Client Name: {client_name}
 Project Title: {project_title}
@@ -46,61 +58,53 @@ Stakeholders: {stakeholders}
 Timeline: {deadline}
 Risks: {risks}
 Client Questions: {questions}
-
-Make the summary sound human, structured, and useful for onboarding.
 """
 
             try:
                 response = model.generate_content(prompt)
-                summary = response.text
+                full_output = response.text
 
-                # Save to project memory
-                st.session_state.projects.append({
-                    "client_name": client_name,
-                    "project_title": project_title,
-                    "summary": summary,
-                    "risks": risks
-                })
-                st.success("✅ Summary generated! Check the next tab to explore.")
+                project_id = str(uuid.uuid4())[:8]
+                st.session_state.project_data[project_id] = {
+                    "title": project_title,
+                    "summary": full_output
+                }
+
+                st.session_state.selected_project = project_id
+                st.success("✅ Summary + Next Steps generated!")
 
             except Exception as e:
-                st.error(f"Failed to generate summary: {e}")
+                st.error(f"Error: {e}")
 
-# ------------ TAB 2: SUMMARY + SELECTOR ------------
+# -------------------------
+# 📄 TAB 2: Summary Viewer
+# -------------------------
 with tab2:
-    st.subheader("📂 View Onboarding Summaries")
+    st.subheader("📁 Project Summaries")
 
-    if len(st.session_state.projects) == 0:
-        st.info("No projects found. Please submit a form first.")
+    if st.session_state.project_data:
+        project_titles = {
+            pid: data["title"] or f"Untitled Project ({pid})"
+            for pid, data in st.session_state.project_data.items()
+        }
+
+        selected_pid = st.selectbox(
+            "Select a project",
+            options=list(project_titles.keys()),
+            format_func=lambda pid: project_titles[pid],
+            index=0 if "selected_project" not in st.session_state else list(project_titles.keys()).index(st.session_state.selected_project)
+        )
+        st.session_state.selected_project = selected_pid
+
+        selected_summary = st.session_state.project_data[selected_pid]["summary"]
+        st.markdown(selected_summary)
+
+        # -------------------------
+        # 🔁 Push to Jira Simulation
+        # -------------------------
+        if st.button("🚀 Push to Jira"):
+            mock_ticket_id = f"AI-{str(uuid.uuid4())[:4].upper()}"
+            st.success(f"✅ Ticket `{mock_ticket_id}` created for **{project_titles[selected_pid]}**.")
+            st.info("🧪 This is a simulated Jira integration. Can be extended to push via API or n8n.")
     else:
-        # Create dropdown list from titles
-        titles = [p["project_title"] for p in st.session_state.projects]
-        selected_title = st.selectbox("Select a project to view:", titles)
-
-        # Fetch the selected project
-        selected_project = next(p for p in st.session_state.projects if p["project_title"] == selected_title)
-
-        st.markdown(f"### 📄 Onboarding Summary: {selected_title}")
-        st.markdown(selected_project["summary"])
-
-        # 📌 Auto-Next Steps Generator
-        st.divider()
-        st.subheader("📌 Suggested Next Steps")
-        if st.button("Generate Next Steps"):
-            with st.spinner("Thinking..."):
-                try:
-                    combined_prompt = f"""
-You are a senior project manager. Based on the following project summary and risks, generate 3 clear, practical next steps a PM should take.
-
-SUMMARY:
-{selected_project["summary"]}
-
-RISKS:
-{selected_project["risks"]}
-"""
-                    response = model.generate_content(combined_prompt)
-                    next_steps = response.text.strip()
-                    st.success("Here are your suggested next steps:")
-                    st.markdown(next_steps)
-                except Exception as e:
-                    st.error(f"Could not generate next steps: {e}")
+        st.info("No summaries yet. Fill the form in Tab 1 to generate.")
