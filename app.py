@@ -31,30 +31,31 @@ st.markdown("""
         box-shadow: 0 4px 10px rgba(40, 167, 69, 0.4);
     }
 
-    /* Expanders – card style */
-    details {
+    /* Expander Styling */
+    .stExpander {
+        background-color: #ffffff;
         border-radius: 12px;
-        background-color: white;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
         margin-top: 1rem;
-        padding: 0;
+        padding: 0.5rem;
     }
 
-    summary {
-        padding: 12px 16px;
+    .stExpander > summary {
         font-weight: 600;
-        font-size: 1.05rem;
-        color: #155724;
+        font-size: 1rem;
         background-color: #e6f4ea;
+        color: #155724;
+        padding: 10px 16px;
         border-radius: 12px;
-        list-style: none;
     }
 
-    summary::-webkit-details-marker {
-        display: none;
+    .streamlit-expanderHeader {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #155724;
     }
 
-    /* Text input / area */
+    /* Inputs */
     input, textarea {
         background-color: #ffffff !important;
         border: 1px solid #ced4da !important;
@@ -62,7 +63,7 @@ st.markdown("""
         padding: 0.5rem !important;
     }
 
-    /* Markdown box (e.g. LLM output) */
+    /* Markdown box */
     .stMarkdown {
         background-color: #ffffff;
         border-radius: 10px;
@@ -71,10 +72,8 @@ st.markdown("""
         margin-top: 1rem;
         font-size: 1rem;
     }
-
     </style>
 """, unsafe_allow_html=True)
-
 
 # Configure Gemini API Key
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
