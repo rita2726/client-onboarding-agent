@@ -1,59 +1,38 @@
 import streamlit as st
 import openai
+from openai import OpenAI
 
-# Set your OpenAI key if running locally (optional)
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+st.title("🤖 Client Onboarding Agent (Demo)")
 
-st.set_page_config(page_title="AI Client Onboarding Agent", page_icon="🤖")
-st.title("🤖 AI Client Onboarding Agent")
-st.markdown("""
-Welcome! Please enter your basic information and let our AI agent help you get started.
-""")
+# Load API key securely from Streamlit secrets
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# --- Input Form ---
-with st.form("onboarding_form"):
-    name = st.text_input("👤 Your Name")
-    company = st.text_input("🏢 Company Name")
-    email = st.text_input("📧 Email")
-    website = st.text_input("🌐 Company Website")
-    goals = st.text_area("🎯 What are your primary goals / pain points?")
-    budget = st.selectbox("💰 Estimated Budget Range", ["< $5,000", "$5,000 - $20,000", "$20,000+"])
-    submit = st.form_submit_button("🚀 Submit & Get AI Summary")
+# Input fields
+company_name = st.text_input("Company Name")
+project_scope = st.text_area("Project Scope")
+budget = st.selectbox("Estimated Budget", ["< $5,000", "$5,000 - $10,000", "> $10,000"])
+timeline = st.text_input("Preferred Timeline")
 
-if submit:
-    with st.spinner("🤖 Thinking..."):
-        # --- Compose prompt ---
-        prompt = f"""
-        You are an AI onboarding agent. Based on the following client information, generate:
-        1. A professional summary of the client's profile
-        2. Suggested next steps
-        3. A follow-up email draft to the client
-
-        ---
-        Name: {name}
-        Company: {company}
-        Email: {email}
-        Website: {website}
-        Goals: {goals}
-        Budget: {budget}
-        """
+if st.button("Generate Onboarding Summary"):
+    with st.spinner("Creating onboarding plan..."):
+        prompt = (
+            f"You are a helpful AI onboarding agent. A new client from a company named '{company_name}' "
+            f"has shared their project scope as: '{project_scope}'. Their estimated budget is '{budget}', "
+            f"and their preferred timeline is '{timeline}'.\n\n"
+            f"Generate a friendly, professional onboarding summary for the internal team."
+        )
 
         try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "You are a helpful business assistant."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.6
+                    {"role": "system", "content": "You are an expert AI onboarding assistant."},
+                    {"role": "user", "content": prompt},
+                ]
             )
-            output = response.choices[0].message.content
-            st.success("✅ AI Summary Ready!")
-            st.markdown("---")
-            st.markdown(output)
+            st.success("Onboarding summary generated!")
+            st.markdown("### 📝 Summary")
+            st.markdown(response.choices[0].message.content)
 
         except Exception as e:
-            st.error(f"❌ Error: {str(e)}")
-
-    st.markdown("---")
-    st.info("This is a demo version. For production, connect to your backend, CRM, or automation tools.")
+            st.error(f"Error: {e}")
