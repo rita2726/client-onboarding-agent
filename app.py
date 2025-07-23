@@ -1,209 +1,165 @@
 import streamlit as st
-import google.generativeai as genai
 import json
 import os
 import datetime
+import google.generativeai as genai
 
-# Inject SaaS-style Custom CSS
+# --- Config ---
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY") or "your-gemini-api-key")
+
+# --- Memory Setup ---
+if "project_memory" not in st.session_state:
+    st.session_state.project_memory = {}
+
+# --- Load Gemini Model ---
+model = genai.GenerativeModel("gemini-2.0-flash")
+
+# --- Page Config ---
+st.set_page_config(page_title="AI Onboarding Assistant", layout="wide")
+
+# --- Custom CSS ---
 st.markdown("""
     <style>
-    /* Base background + typography */
     .stApp {
-        background-color: #f4f7fa;
+        background-color: #f3f7fa;
         font-family: 'Segoe UI', sans-serif;
     }
 
-    /* Buttons */
     div.stButton > button {
         background-color: #28a745;
         color: white;
-        border-radius: 10px;
-        padding: 0.6em 1.2em;
         font-weight: 600;
+        padding: 0.6em 1.2em;
         border: none;
-        box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
-        transition: all 0.2s ease-in-out;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 128, 0, 0.2);
+        transition: all 0.3s ease;
     }
 
     div.stButton > button:hover {
         background-color: #218838;
         transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(40, 167, 69, 0.4);
+        box-shadow: 0 4px 8px rgba(0, 128, 0, 0.3);
     }
 
-    /* Expander Styling */
-    .stExpander {
-        background-color: #ffffff;
+    [data-testid="stExpander"] {
+        background: #ffffff;
         border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-        margin-top: 1rem;
-        padding: 0.5rem;
+        padding: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        margin: 1rem 0;
     }
 
-    .stExpander > summary {
-        font-weight: 600;
+    [data-testid="stExpander"] > details {
+        border: none;
+    }
+
+    [data-testid="stExpander"] summary {
         font-size: 1rem;
+        font-weight: 600;
+        color: #155724;
         background-color: #e6f4ea;
-        color: #155724;
-        padding: 10px 16px;
-        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        list-style: none;
     }
 
-    .streamlit-expanderHeader {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #155724;
+    [data-testid="stExpander"] summary::-webkit-details-marker {
+        display: none;
     }
 
-    /* Inputs */
-    input, textarea {
-        background-color: #ffffff !important;
-        border: 1px solid #ced4da !important;
-        border-radius: 8px !important;
-        padding: 0.5rem !important;
-    }
-
-    /* Markdown box */
     .stMarkdown {
         background-color: #ffffff;
         border-radius: 10px;
         padding: 1rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
         margin-top: 1rem;
         font-size: 1rem;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Configure Gemini API Key
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-model = genai.GenerativeModel("gemini-2.0-flash")
+# --- App Title ---
+st.title("🤖 AI Onboarding Assistant")
 
-# Paths
-MEMORY_FILE = "multi_project_memory.json"
+# --- Project Selector ---
+project_names = list(st.session_state.project_memory.keys())
+selected_project = st.selectbox("🔀 Select or Create a Project", ["New Project"] + project_names)
 
-# Initialize memory
-if not os.path.exists(MEMORY_FILE):
-    with open(MEMORY_FILE, "w") as f:
-        json.dump({}, f)
+if selected_project == "New Project":
+    new_project_name = st.text_input("Enter new project name")
+    if new_project_name and new_project_name not in st.session_state.project_memory:
+        st.session_state.project_memory[new_project_name] = []
+        selected_project = new_project_name
+else:
+    new_project_name = selected_project
 
-# Load memory
-with open(MEMORY_FILE, "r") as f:
-    memory_data = json.load(f)
+# --- Input Form ---
+st.subheader("📋 Onboarding Form")
+with st.form(key="onboarding_form"):
+    name = st.text_input("👤 Client Name")
+    company = st.text_input("🏢 Company Name")
+    goals = st.text_area("🎯 Key Goals / Use Cases")
+    pain_points = st.text_area("❗ Current Pain Points")
+    tools = st.text_input("🛠️ Tools in Use (Comma Separated)")
+    submitted = st.form_submit_button("✅ Generate Summary")
 
-# Title
-st.title("🚀 AI Project Onboarding Assistant")
-st.markdown("Make your PMO process faster, smarter, and risk-aware with AI ✨")
+# --- Handle Submit ---
+if submitted and name:
+    prompt = f"""
+    You're an AI Onboarding Specialist. Summarize the following client data in an executive tone.
 
-# 1️⃣ Project Form Section
-with st.expander("📝 Fill New Project Intake Form", expanded=True):
-    st.markdown("Enter client project details below or load an example:")
+    Name: {name}
+    Company: {company}
+    Goals: {goals}
+    Pain Points: {pain_points}
+    Tools: {tools}
+    """
 
-    # Load Example Button
-    if st.button("🧪 Load Example Project"):
-        st.session_state.client_name = "TechNova Ltd."
-        st.session_state.project_title = "Customer Onboarding AI Automation"
-        st.session_state.goals = "Automate user onboarding, reduce manual steps by 80%, integrate with CRM."
-        st.session_state.stakeholders = "CTO, Product Manager, Customer Success Lead"
-        st.session_state.deadline = "15 August 2025"
-        st.session_state.risks = "Limited internal tech bandwidth; unclear user journey"
-        st.session_state.questions = "What’s the expected TAT for full onboarding?"
-
-    # Input Fields with Tooltips
-    client_name = st.text_input("👤 Client Name", value=st.session_state.get("client_name", ""), help="Who is the client or company you're working with?")
-    project_title = st.text_input("📌 Project Title", value=st.session_state.get("project_title", ""), help="What is the name of the project or initiative?")
-    goals = st.text_area("🎯 Project Goals", value=st.session_state.get("goals", ""), help="List the primary objectives or outcomes of the project.")
-    stakeholders = st.text_area("👥 Stakeholders", value=st.session_state.get("stakeholders", ""), help="Mention key people or roles involved.")
-    deadline = st.text_input("🗓️ Timeline / Deadline", value=st.session_state.get("deadline", ""), help="Mention any fixed timelines or target launch dates.")
-    risks = st.text_area("⚠️ Known Risks / Concerns", value=st.session_state.get("risks", ""), help="Any known challenges or risks you foresee?")
-    questions = st.text_area("❓ Client Questions or Flags", value=st.session_state.get("questions", ""), help="Any queries or concerns raised by the client?")
-
-    submitted = st.button("✅ Generate AI Summary")
-
-# 2️⃣ AI Summary Section
-if submitted:
-    with st.spinner("Generating summary using Gemini..."):
-        prompt = f"""
-You are a project manager at a top consulting firm. A new client has submitted a project intake form.
-
-Generate a warm, confident internal summary for the team using the following details:
-
-Client Name: {client_name}
-Project Title: {project_title}
-Goals: {goals}
-Stakeholders: {stakeholders}
-Timeline: {deadline}
-Risks: {risks}
-Client Questions: {questions}
-
-Make the summary sound human, structured, and useful for onboarding.
-"""
+    with st.spinner("Generating Gemini-powered onboarding summary..."):
         try:
             response = model.generate_content(prompt)
             summary = response.text
-            st.session_state.generated_summary = summary
-            st.session_state.last_project_key = f"{client_name} - {project_title}"
-
-            # Save to memory
-            memory_data[st.session_state.last_project_key] = {
-                "client_name": client_name,
-                "project_title": project_title,
-                "goals": goals,
-                "stakeholders": stakeholders,
-                "deadline": deadline,
-                "risks": risks,
-                "questions": questions,
-                "summary": summary,
-                "timestamp": datetime.datetime.now().isoformat()
-            }
-
-            with open(MEMORY_FILE, "w") as f:
-                json.dump(memory_data, f, indent=2)
-
-            st.success("✅ Summary generated!")
-
         except Exception as e:
-            st.error(f"Failed to generate summary: {e}")
+            summary = f"Error generating summary: {e}"
 
-# 3️⃣ View AI Summary
-if "generated_summary" in st.session_state:
-    with st.expander("📄 View AI Summary", expanded=True):
-        st.markdown(st.session_state.generated_summary)
+    # Save to project memory
+    if new_project_name:
+        st.session_state.project_memory[new_project_name].append({
+            "timestamp": datetime.datetime.now().isoformat(),
+            "summary": summary
+        })
 
-# 4️⃣ Multi-Project Memory Selector
-if memory_data:
-    with st.expander("🧠 Switch Between Saved Projects", expanded=False):
-        project_keys = list(memory_data.keys())
-        selected_project = st.selectbox("Select Project", project_keys)
+    st.markdown("### 📝 AI Summary")
+    st.markdown(summary)
 
-        if selected_project:
-            selected_data = memory_data[selected_project]
-            st.markdown(f"**Client:** {selected_data['client_name']}")
-            st.markdown(f"**Project:** {selected_data['project_title']}")
-            st.markdown(f"**📝 Summary:**\n\n{selected_data['summary']}")
-
-# 5️⃣ Auto Next Steps
-if "generated_summary" in st.session_state:
-    with st.expander("📌 Suggested Next Steps (Auto Generated)", expanded=False):
+    # --- Expander: Suggested Next Steps ---
+    with st.expander("💡 Suggested Next Steps"):
+        next_prompt = f"Based on this onboarding summary, suggest 3 next steps:\n\n{summary}"
         try:
-            steps_prompt = f"""You are a proactive project manager. Based on the following client onboarding summary, suggest 3 clear, actionable next steps for the internal team:
+            next_response = model.generate_content(next_prompt)
+            st.markdown(next_response.text)
+        except Exception as e:
+            st.error(f"Error generating next steps: {e}")
 
-Summary:
-{st.session_state.generated_summary}
+    # --- Expander: Project History ---
+    with st.expander("📂 Switch Between Projects"):
+        for project, sessions in st.session_state.project_memory.items():
+            st.markdown(f"**{project}** ({len(sessions)} entries)")
+            for s in sessions[-1:]:
+                st.markdown(f"- {s['timestamp'][:19]}: {s['summary'][:100]}...")
 
-Respond in bullet points."""
-            response = model.generate_content(steps_prompt)
-            st.markdown(response.text)
-        except:
-            st.warning("Next steps could not be generated.")
+    # --- Expander: Push to Jira ---
+    with st.expander("🚀 Push to Jira"):
+        st.markdown("🧪 This is a simulated Jira ticket creation.")
+        st.markdown(f"✅ Pushed summary to `JIRA-PROJECT/{new_project_name.upper()}` as onboarding notes.")
 
-# 6️⃣ Push to Jira (Simulated)
-if "generated_summary" in st.session_state:
-    with st.expander("🚀 Push to Jira (Simulated)", expanded=False):
-        st.markdown("This is a demo of pushing to Jira. In production, this would trigger an API call.")
-        if st.button("🔁 Simulate Push to Jira"):
-            st.success("🎉 Summary successfully pushed to Jira!")
-
-# Footer
-st.divider()
-st.markdown("Built with ❤️ by Rita Sharma · Powered by Gemini · [Demo Use Only]")
+# --- Load Example ---
+if st.button("📌 Load Example Project"):
+    demo_data = {
+        "timestamp": datetime.datetime.now().isoformat(),
+        "summary": "Client: ABC Corp\nGoals: Automate workflows\nPain Points: Manual onboarding\nTools: Notion, Slack"
+    }
+    st.session_state.project_memory["Demo Project"] = [demo_data]
+    st.experimental_rerun()
