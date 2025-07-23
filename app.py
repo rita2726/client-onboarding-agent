@@ -1,29 +1,59 @@
 import streamlit as st
-import datetime
+import openai
 
-st.set_page_config(page_title="Client Onboarding AI Agent", page_icon="🤖")
+# Set your OpenAI key if running locally (optional)
+# openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-st.title("🤖 Client Onboarding AI Agent")
+st.set_page_config(page_title="AI Client Onboarding Agent", page_icon="🤖")
+st.title("🤖 AI Client Onboarding Agent")
+st.markdown("""
+Welcome! Please enter your basic information and let our AI agent help you get started.
+""")
 
+# --- Input Form ---
 with st.form("onboarding_form"):
-    st.subheader("📋 Fill Client Details")
-
-    name = st.text_input("Client Name")
-    email = st.text_input("Email Address")
-    company = st.text_input("Company Name")
-    industry = st.selectbox("Industry", ["Tech", "Finance", "Healthcare", "Other"])
-    project_scope = st.text_area("Describe the Project Scope")
-    urgency = st.select_slider("Urgency Level", ["Low", "Medium", "High"])
-    submit = st.form_submit_button("Submit")
+    name = st.text_input("👤 Your Name")
+    company = st.text_input("🏢 Company Name")
+    email = st.text_input("📧 Email")
+    website = st.text_input("🌐 Company Website")
+    goals = st.text_area("🎯 What are your primary goals / pain points?")
+    budget = st.selectbox("💰 Estimated Budget Range", ["< $5,000", "$5,000 - $20,000", "$20,000+"])
+    submit = st.form_submit_button("🚀 Submit & Get AI Summary")
 
 if submit:
-    st.success("🎉 Agent Response:")
-    st.markdown(f"""
-    👋 Hello **{name}**,  
-    Thanks for reaching out on behalf of **{company}** in the **{industry}** industry.  
-    We'll review your project scope and get back to you within 24 hours based on your **{urgency}** urgency level.  
-    📧 Confirmation sent to: `{email}`  
-    🕐 Timestamp: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-    """)
+    with st.spinner("🤖 Thinking..."):
+        # --- Compose prompt ---
+        prompt = f"""
+        You are an AI onboarding agent. Based on the following client information, generate:
+        1. A professional summary of the client's profile
+        2. Suggested next steps
+        3. A follow-up email draft to the client
 
-    st.info("✅ This is a Client Onboarding AI agent. Email was sent to the client.")
+        ---
+        Name: {name}
+        Company: {company}
+        Email: {email}
+        Website: {website}
+        Goals: {goals}
+        Budget: {budget}
+        """
+
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a helpful business assistant."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.6
+            )
+            output = response.choices[0].message.content
+            st.success("✅ AI Summary Ready!")
+            st.markdown("---")
+            st.markdown(output)
+
+        except Exception as e:
+            st.error(f"❌ Error: {str(e)}")
+
+    st.markdown("---")
+    st.info("This is a demo version. For production, connect to your backend, CRM, or automation tools.")
