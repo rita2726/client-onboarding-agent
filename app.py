@@ -7,61 +7,83 @@ import datetime
 # Inject SaaS-style Custom CSS
 st.markdown("""
     <style>
-    /* Main background and text */
+    /* Base background + typography */
     body, .stApp {
-        background-color: #f8f9fa;
+        background-color: #f4f7fa;
         color: #1e1e1e;
+        font-family: 'Segoe UI', sans-serif;
     }
 
-    /* Primary button style */
+    /* Primary buttons */
     div.stButton > button {
         background-color: #28a745;
         color: white;
-        border-radius: 8px;
-        padding: 0.5em 1em;
+        border-radius: 10px;
+        padding: 0.6em 1.2em;
         border: none;
-        font-weight: bold;
+        font-weight: 600;
+        box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+        transition: all 0.2s ease-in-out;
     }
 
     div.stButton > button:hover {
         background-color: #218838;
-        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(40, 167, 69, 0.4);
     }
 
-    /* Expander title bar */
+    /* Expander container style (like SaaS cards) */
+    .stExpander {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        padding: 1rem;
+        margin-top: 1rem;
+        border: none;
+    }
+
+    /* Expander title style */
     details > summary {
         background-color: #e6f4ea;
         color: #155724;
         font-weight: 600;
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #c3e6cb;
-        margin-bottom: 0.5em;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        font-size: 1.05rem;
+        margin-bottom: 0.5rem;
     }
 
-    /* Expander content box */
-    .stExpander {
-        background-color: #ffffff;
-        border: 1px solid #c3e6cb;
-        border-radius: 8px;
-        padding: 0.75em;
-        margin-bottom: 1em;
+    /* Text input / text area styling */
+    input, textarea {
+        background-color: #ffffff !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 8px !important;
+        padding: 0.5rem !important;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
     }
 
-    /* Selectbox styling */
+    /* Selectbox style */
     .stSelectbox > div[data-baseweb="select"] {
-        background-color: #e6f4ea;
+        background-color: #ffffff;
         border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
 
-    /* Markdown summary section */
+    /* Markdown outputs (like Gemini's next steps) */
     .stMarkdown {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        margin-top: 1rem;
         font-size: 1rem;
-        line-height: 1.5;
     }
 
     </style>
 """, unsafe_allow_html=True)
+
 
 
 # Configure Gemini API Key
