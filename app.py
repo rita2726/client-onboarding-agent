@@ -5,7 +5,7 @@ import uuid
 
 # Configure Gemini API Key
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-model = genai.GenerativeModel("gemini-2.0-pro")
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 # Project storage in session
 if "project_data" not in st.session_state:
