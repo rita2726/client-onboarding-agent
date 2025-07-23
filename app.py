@@ -22,21 +22,32 @@ with open(MEMORY_FILE, "r") as f:
 
 # Title
 st.title("🚀 AI Project Onboarding Assistant")
-
 st.markdown("Make your PMO process faster, smarter, and risk-aware with AI ✨")
 
 # 1️⃣ Project Form Section
 with st.expander("📝 Fill New Project Intake Form", expanded=True):
-    st.markdown("Enter client project details below:")
+    st.markdown("Enter client project details below or load an example:")
 
-    client_name = st.text_input("👤 Client Name")
-    project_title = st.text_input("📌 Project Title")
-    goals = st.text_area("🎯 Project Goals")
-    stakeholders = st.text_area("👥 Stakeholders")
-    deadline = st.text_input("🗓️ Timeline / Deadline")
-    risks = st.text_area("⚠️ Known Risks / Concerns")
-    questions = st.text_area("❓ Client Questions or Flags")
-    submitted = st.button("Generate AI Summary")
+    # Load Example Button
+    if st.button("🧪 Load Example Project"):
+        st.session_state.client_name = "TechNova Ltd."
+        st.session_state.project_title = "Customer Onboarding AI Automation"
+        st.session_state.goals = "Automate user onboarding, reduce manual steps by 80%, integrate with CRM."
+        st.session_state.stakeholders = "CTO, Product Manager, Customer Success Lead"
+        st.session_state.deadline = "15 August 2025"
+        st.session_state.risks = "Limited internal tech bandwidth; unclear user journey"
+        st.session_state.questions = "What’s the expected TAT for full onboarding?"
+
+    # Input Fields with Tooltips
+    client_name = st.text_input("👤 Client Name", value=st.session_state.get("client_name", ""), help="Who is the client or company you're working with?")
+    project_title = st.text_input("📌 Project Title", value=st.session_state.get("project_title", ""), help="What is the name of the project or initiative?")
+    goals = st.text_area("🎯 Project Goals", value=st.session_state.get("goals", ""), help="List the primary objectives or outcomes of the project.")
+    stakeholders = st.text_area("👥 Stakeholders", value=st.session_state.get("stakeholders", ""), help="Mention key people or roles involved.")
+    deadline = st.text_input("🗓️ Timeline / Deadline", value=st.session_state.get("deadline", ""), help="Mention any fixed timelines or target launch dates.")
+    risks = st.text_area("⚠️ Known Risks / Concerns", value=st.session_state.get("risks", ""), help="Any known challenges or risks you foresee?")
+    questions = st.text_area("❓ Client Questions or Flags", value=st.session_state.get("questions", ""), help="Any queries or concerns raised by the client?")
+
+    submitted = st.button("✅ Generate AI Summary")
 
 # 2️⃣ AI Summary Section
 if submitted:
@@ -56,7 +67,6 @@ Client Questions: {questions}
 
 Make the summary sound human, structured, and useful for onboarding.
 """
-
         try:
             response = model.generate_content(prompt)
             summary = response.text
@@ -84,12 +94,12 @@ Make the summary sound human, structured, and useful for onboarding.
         except Exception as e:
             st.error(f"Failed to generate summary: {e}")
 
-# Show summary (always visible if available)
+# 3️⃣ View AI Summary
 if "generated_summary" in st.session_state:
     with st.expander("📄 View AI Summary", expanded=True):
         st.markdown(st.session_state.generated_summary)
 
-# 3️⃣ Multi-Project Memory Selector
+# 4️⃣ Multi-Project Memory Selector
 if memory_data:
     with st.expander("🧠 Switch Between Saved Projects", expanded=False):
         project_keys = list(memory_data.keys())
@@ -101,7 +111,7 @@ if memory_data:
             st.markdown(f"**Project:** {selected_data['project_title']}")
             st.markdown(f"**📝 Summary:**\n\n{selected_data['summary']}")
 
-# 4️⃣ Auto Next Steps
+# 5️⃣ Auto Next Steps
 if "generated_summary" in st.session_state:
     with st.expander("📌 Suggested Next Steps (Auto Generated)", expanded=False):
         try:
@@ -116,11 +126,10 @@ Respond in bullet points."""
         except:
             st.warning("Next steps could not be generated.")
 
-# 5️⃣ Push to Jira (Simulated)
+# 6️⃣ Push to Jira (Simulated)
 if "generated_summary" in st.session_state:
     with st.expander("🚀 Push to Jira (Simulated)", expanded=False):
         st.markdown("This is a demo of pushing to Jira. In production, this would trigger an API call.")
-
         if st.button("🔁 Simulate Push to Jira"):
             st.success("🎉 Summary successfully pushed to Jira!")
 
