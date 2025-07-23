@@ -1,52 +1,63 @@
 import streamlit as st
 import google.generativeai as genai
-import os
 
-# Configure Gemini API key
-genai.configure(api_key="AIzaSyB_nGht2c0CNNwG2GYV75RLtYh5o0zWZa4")
+# Configure Gemini API Key (from Streamlit secrets)
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-st.subheader("🔍 Debug: List Available Gemini Models")
+# Load the Gemini model
+model = genai.GenerativeModel("gemini-1.5-pro-latest")
 
-if st.button("List Available Models"):
-    try:
-        models = genai.list_models()
-        for model in models:
-            st.success(f"{model.name} — {model.supported_generation_methods}")
-    except Exception as e:
-        st.error(f"❌ Error fetching models: {e}")
+# Title
+st.title("📝 AI Project Intake Summary")
 
+# Tabs
+tab1, tab2 = st.tabs(["Project Form", "Generated Summary"])
 
-# Set Gemini API Key (use environment variable or secrets)
-genai.configure(api_key=os.getenv("GEMINI_API_KEY", st.secrets.get("GEMINI_API_KEY")))
+# Input form
+with tab1:
+    st.subheader("🧾 New Client Project Intake Form")
 
-# Create Gemini model
-model = genai.GenerativeModel("gemini-pro")
+    client_name = st.text_input("Client Name")
+    project_title = st.text_input("Project Title")
+    goals = st.text_area("Project Goals")
+    stakeholders = st.text_area("Stakeholders")
+    deadline = st.text_input("Timeline / Deadline")
+    risks = st.text_area("Known Risks / Concerns")
+    questions = st.text_area("Client Questions or Flags")
+    submitted = st.button("Generate Summary")
 
-# Streamlit UI
-st.title("📨 AI Client Onboarding Summary Generator (Gemini)")
+    if submitted:
+        with st.spinner("Generating summary using Gemini..."):
 
-with st.form("input_form"):
-    client_name = st.text_input("Client Name", placeholder="e.g. Acme Corp")
-    project_scope = st.text_area("Project Scope", placeholder="e.g. Redesign their e-commerce platform...")
-    budget = st.text_input("Budget", placeholder="e.g. Under $5,000")
-    timeline = st.text_input("Timeline", placeholder="e.g. 3 months")
+            # Prompt Template
+            prompt = f"""
+You are a project manager at a top consulting firm. A new client has submitted a project intake form.
 
-    submitted = st.form_submit_button("Generate Summary")
+Generate a warm, confident internal summary for the team using the following details:
 
-if submitted:
-    with st.spinner("Generating summary..."):
-        prompt = f"""
-You are a Project Manager at a top consulting agency. Write a warm, confident onboarding summary for the internal team after a new client fills in a project intake form.
+Client Name: {client_name}
+Project Title: {project_title}
+Goals: {goals}
+Stakeholders: {stakeholders}
+Timeline: {deadline}
+Risks: {risks}
+Client Questions: {questions}
 
-Use the following details:
-- Company: {client_name}
-- Project Scope: {project_scope}
-- Budget: {budget}
-- Timeline: {timeline}
-
-Structure the message in a professional, friendly tone with a clear subject line, intro, project breakdown, and suggested next steps.
+Make the summary sound human, structured, and useful for onboarding.
 """
 
-        response = model.generate_content(prompt)
-        st.subheader("📨 Generated Summary")
-        st.markdown(response.text)
+            try:
+                response = model.generate_content(prompt)
+                summary = response.text
+                st.session_state.generated_summary = summary
+                st.success("✅ Summary generated. Check the next tab!")
+            except Exception as e:
+                st.error(f"Failed to generate summary: {e}")
+
+# Summary tab
+with tab2:
+    st.subheader("📄 Onboarding Summary")
+    if "generated_summary" in st.session_state:
+        st.markdown(st.session_state.generated_summary)
+    else:
+        st.info("Fill the form and click Generate Summary to see the output here.")
