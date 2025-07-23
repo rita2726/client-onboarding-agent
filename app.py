@@ -5,7 +5,7 @@ import google.generativeai as genai
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
 # Load the Gemini model
-model = genai.GenerativeModel("gemini-1.5-pro") 
+model = genai.GenerativeModel("gemini-2.0-flash") 
 
 # Title
 st.title("📝 AI Project Intake Summary")
