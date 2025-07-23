@@ -7,42 +7,62 @@ import datetime
 # Inject SaaS-style Custom CSS
 st.markdown("""
     <style>
-    body {
-        font-family: 'Segoe UI', sans-serif;
-        background-color: #f7f9fb;
+    /* Main background and text */
+    body, .stApp {
+        background-color: #f8f9fa;
+        color: #1e1e1e;
     }
-    .stApp {
-        max-width: 900px;
-        margin: auto;
-        padding: 2rem;
-        background-color: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
-    }
-    .stTextInput, .stTextArea, .stSelectbox {
-        border-radius: 10px !important;
-        background-color: #fff !important;
-    }
-    .stButton > button {
-        background-color: #4CAF50;
+
+    /* Primary button style */
+    div.stButton > button {
+        background-color: #28a745;
         color: white;
         border-radius: 8px;
-        padding: 8px 16px;
+        padding: 0.5em 1em;
         border: none;
-        transition: background-color 0.3s ease;
+        font-weight: bold;
     }
-    .stButton > button:hover {
-        background-color: #45a049;
+
+    div.stButton > button:hover {
+        background-color: #218838;
+        color: white;
     }
+
+    /* Expander title bar */
+    details > summary {
+        background-color: #e6f4ea;
+        color: #155724;
+        font-weight: 600;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #c3e6cb;
+        margin-bottom: 0.5em;
+    }
+
+    /* Expander content box */
     .stExpander {
-        border-radius: 12px !important;
-        border: 1px solid #e0e0e0 !important;
+        background-color: #ffffff;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        padding: 0.75em;
+        margin-bottom: 1em;
     }
-    h1, h2, h3 {
-        color: #2b2d42;
+
+    /* Selectbox styling */
+    .stSelectbox > div[data-baseweb="select"] {
+        background-color: #e6f4ea;
+        border-radius: 8px;
     }
+
+    /* Markdown summary section */
+    .stMarkdown {
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
     </style>
 """, unsafe_allow_html=True)
+
 
 # Configure Gemini API Key
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
