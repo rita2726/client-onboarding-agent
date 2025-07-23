@@ -2,6 +2,20 @@ import streamlit as st
 import google.generativeai as genai
 import os
 
+# Configure Gemini API key
+genai.configure(api_key="YOUR_GEMINI_API_KEY_HERE")
+
+st.subheader("🔍 Debug: List Available Gemini Models")
+
+if st.button("List Available Models"):
+    try:
+        models = genai.list_models()
+        for model in models:
+            st.success(f"{model.name} — {model.supported_generation_methods}")
+    except Exception as e:
+        st.error(f"❌ Error fetching models: {e}")
+
+
 # Set Gemini API Key (use environment variable or secrets)
 genai.configure(api_key=os.getenv("GEMINI_API_KEY", st.secrets.get("GEMINI_API_KEY")))
 
