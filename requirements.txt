@@ -1,3 +1,1 @@
-openai
-streamlit
-python-dotenv
+pip install google-generativeai
