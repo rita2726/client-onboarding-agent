@@ -10,10 +10,14 @@ model = genai.GenerativeModel("gemini-2.0-flash")
 # Title
 st.title("📝 AI Project Intake Summary")
 
+# Initialize memory for all project submissions
+if "projects" not in st.session_state:
+    st.session_state.projects = []
+
 # Tabs
 tab1, tab2 = st.tabs(["Project Form", "Generated Summary"])
 
-# Input form
+# ------------ TAB 1: FORM ------------
 with tab1:
     st.subheader("🧾 New Client Project Intake Form")
 
@@ -24,6 +28,7 @@ with tab1:
     deadline = st.text_input("Timeline / Deadline")
     risks = st.text_area("Known Risks / Concerns")
     questions = st.text_area("Client Questions or Flags")
+
     submitted = st.button("Generate Summary")
 
     if submitted:
@@ -48,18 +53,35 @@ Make the summary sound human, structured, and useful for onboarding.
             try:
                 response = model.generate_content(prompt)
                 summary = response.text
-                st.session_state.generated_summary = summary
-                st.session_state.risks = risks
-                st.success("✅ Summary generated. Check the next tab!")
+
+                # Save to project memory
+                st.session_state.projects.append({
+                    "client_name": client_name,
+                    "project_title": project_title,
+                    "summary": summary,
+                    "risks": risks
+                })
+                st.success("✅ Summary generated! Check the next tab to explore.")
+
             except Exception as e:
                 st.error(f"Failed to generate summary: {e}")
 
-# Summary tab
+# ------------ TAB 2: SUMMARY + SELECTOR ------------
 with tab2:
-    st.subheader("📄 Onboarding Summary")
+    st.subheader("📂 View Onboarding Summaries")
 
-    if "generated_summary" in st.session_state:
-        st.markdown(st.session_state.generated_summary)
+    if len(st.session_state.projects) == 0:
+        st.info("No projects found. Please submit a form first.")
+    else:
+        # Create dropdown list from titles
+        titles = [p["project_title"] for p in st.session_state.projects]
+        selected_title = st.selectbox("Select a project to view:", titles)
+
+        # Fetch the selected project
+        selected_project = next(p for p in st.session_state.projects if p["project_title"] == selected_title)
+
+        st.markdown(f"### 📄 Onboarding Summary: {selected_title}")
+        st.markdown(selected_project["summary"])
 
         # 📌 Auto-Next Steps Generator
         st.divider()
@@ -71,17 +93,14 @@ with tab2:
 You are a senior project manager. Based on the following project summary and risks, generate 3 clear, practical next steps a PM should take.
 
 SUMMARY:
-{st.session_state.generated_summary}
+{selected_project["summary"]}
 
 RISKS:
-{st.session_state.risks}
+{selected_project["risks"]}
 """
-
                     response = model.generate_content(combined_prompt)
                     next_steps = response.text.strip()
                     st.success("Here are your suggested next steps:")
                     st.markdown(next_steps)
                 except Exception as e:
                     st.error(f"Could not generate next steps: {e}")
-    else:
-        st.info("Fill the form and click Generate Summary to see the output here.")
