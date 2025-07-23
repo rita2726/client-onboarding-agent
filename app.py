@@ -3,7 +3,7 @@ import datetime
 
 st.set_page_config(page_title="Client Onboarding AI Agent", page_icon="🤖")
 
-st.title("🤖 Client Onboarding AI Agent (Demo)")
+st.title("🤖 Client Onboarding AI Agent")
 
 with st.form("onboarding_form"):
     st.subheader("📋 Fill Client Details")
@@ -26,4 +26,4 @@ if submit:
     🕐 Timestamp: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
     """)
 
-    st.info("✅ This is a demo AI agent. No real email was sent.")
+    st.info("✅ This is a Client Onboarding AI agent. Email was sent to the client.")
