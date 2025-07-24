@@ -15,73 +15,79 @@ if "project_memory" not in st.session_state:
 model = genai.GenerativeModel("gemini-2.0-flash")
 
 # --- Page Config ---
-st.set_page_config(page_title="AI Onboarding Assistant", layout="wide")
+st.set_page_config(page_title="🌟 AI Onboarding Assistant", layout="wide")
 
 # --- Custom CSS ---
 st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+
     .stApp {
-        background-color: #f3f7fa;
-        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(to right, #e0f7fa, #ffffff);
+        padding: 1rem;
+    }
+
+    .main-card {
+        background-color: #ffffff;
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+
+    h1, h2, h3 {
+        color: #1e3a5f;
     }
 
     div.stButton > button {
-        background-color: #28a745;
+        background: linear-gradient(to right, #28a745, #218838);
         color: white;
         font-weight: 600;
-        padding: 0.6em 1.2em;
         border: none;
+        padding: 0.6rem 1.2rem;
         border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 128, 0, 0.2);
         transition: all 0.3s ease;
     }
 
     div.stButton > button:hover {
-        background-color: #218838;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 128, 0, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 128, 0, 0.3);
     }
 
     [data-testid="stExpander"] {
-        background: #ffffff;
-        border-radius: 12px;
-        padding: 1rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        margin: 1rem 0;
-    }
-
-    [data-testid="stExpander"] > details {
-        border: none;
+        border-radius: 14px;
+        margin-top: 1rem;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.07);
+        background: #f9f9f9;
     }
 
     [data-testid="stExpander"] summary {
-        font-size: 1rem;
         font-weight: 600;
-        color: #155724;
+        font-size: 1.1rem;
         background-color: #e6f4ea;
         padding: 0.75rem 1rem;
-        border-radius: 8px;
+        border-radius: 10px;
         cursor: pointer;
-        list-style: none;
     }
 
-    [data-testid="stExpander"] summary::-webkit-details-marker {
-        display: none;
+    [data-testid="stExpander"] summary:hover {
+        background-color: #d4edda;
     }
 
     .stMarkdown {
-        background-color: #ffffff;
-        border-radius: 10px;
-        padding: 1rem;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        margin-top: 1rem;
         font-size: 1rem;
+        line-height: 1.6;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- App Title ---
+# --- Title ---
 st.title("🤖 AI Onboarding Assistant")
+st.markdown("Welcome! Fill in the details below and let our AI help you onboard clients smartly. ✨")
 
 # --- Project Selector ---
 project_names = list(st.session_state.project_memory.keys())
@@ -96,19 +102,25 @@ else:
     new_project_name = selected_project
 
 # --- Input Form ---
-st.subheader("📋 Onboarding Form")
-with st.form(key="onboarding_form"):
-    name = st.text_input("👤 Client Name")
-    company = st.text_input("🏢 Company Name")
-    goals = st.text_area("🎯 Key Goals / Use Cases")
-    pain_points = st.text_area("❗ Current Pain Points")
-    tools = st.text_input("🛠️ Tools in Use (Comma Separated)")
-    submitted = st.form_submit_button("✅ Generate Summary")
+st.subheader("📋 Client Onboarding Form")
 
-# --- Handle Submit ---
+with st.form(key="onboarding_form"):
+    with st.container():
+        st.markdown('<div class="main-card">', unsafe_allow_html=True)
+
+        name = st.text_input("👤 Client Name")
+        company = st.text_input("🏢 Company Name")
+        goals = st.text_area("🎯 Key Goals / Use Cases")
+        pain_points = st.text_area("❗ Current Pain Points")
+        tools = st.text_input("🛠️ Tools in Use (Comma Separated)")
+        submitted = st.form_submit_button("✅ Generate Summary")
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# --- Handle Submission ---
 if submitted and name:
     prompt = f"""
-    You're an AI Onboarding Specialist. Summarize the following client data in an executive tone.
+    You're an AI onboarding specialist. Summarize the following client data in an executive tone.
 
     Name: {name}
     Company: {company}
@@ -117,46 +129,46 @@ if submitted and name:
     Tools: {tools}
     """
 
-    with st.spinner("Generating Gemini-powered onboarding summary..."):
+    with st.spinner("⚙️ Generating Gemini-powered onboarding summary..."):
         try:
             response = model.generate_content(prompt)
             summary = response.text
         except Exception as e:
-            summary = f"Error generating summary: {e}"
+            summary = f"⚠️ Error generating summary: {e}"
 
-    # Save to project memory
+    # Save to memory
     if new_project_name:
         st.session_state.project_memory[new_project_name].append({
             "timestamp": datetime.datetime.now().isoformat(),
             "summary": summary
         })
 
+    # --- Display Summary ---
     st.markdown("### 📝 AI Summary")
-    st.markdown(summary)
+    st.markdown(f'<div class="main-card">{summary}</div>', unsafe_allow_html=True)
 
-    # --- Expander: Suggested Next Steps ---
+    # --- Expander: Next Steps ---
     with st.expander("💡 Suggested Next Steps"):
         next_prompt = f"Based on this onboarding summary, suggest 3 next steps:\n\n{summary}"
         try:
             next_response = model.generate_content(next_prompt)
             st.markdown(next_response.text)
         except Exception as e:
-            st.error(f"Error generating next steps: {e}")
+            st.error(f"⚠️ Error generating next steps: {e}")
 
     # --- Expander: Project History ---
-    with st.expander("📂 Switch Between Projects"):
+    with st.expander("📂 Project History & Switch"):
         for project, sessions in st.session_state.project_memory.items():
             st.markdown(f"**{project}** ({len(sessions)} entries)")
             for s in sessions[-1:]:
-                st.markdown(f"- {s['timestamp'][:19]}: {s['summary'][:100]}...")
+                st.markdown(f"- ⏰ {s['timestamp'][:19]}: {s['summary'][:120]}...")
 
-    # --- Expander: Push to Jira ---
-    with st.expander("🚀 Push to Jira"):
-        st.markdown("🧪 This is a simulated Jira ticket creation.")
-        st.markdown(f"✅ Pushed summary to `JIRA-PROJECT/{new_project_name.upper()}` as onboarding notes.")
+    # --- Expander: Simulate Push to Jira ---
+    with st.expander("🚀 Push to Jira (Simulated)"):
+        st.success(f"Pushed to `JIRA-PROJECT/{new_project_name.upper()}` as onboarding notes.")
 
 # --- Load Example ---
-if st.button("📌 Load Example Project"):
+if st.button("📌 Load Demo Project"):
     demo_data = {
         "timestamp": datetime.datetime.now().isoformat(),
         "summary": "Client: ABC Corp\nGoals: Automate workflows\nPain Points: Manual onboarding\nTools: Notion, Slack"
